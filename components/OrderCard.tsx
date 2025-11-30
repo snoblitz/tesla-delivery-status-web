@@ -17,6 +17,7 @@ import SchedulingBanner from './SchedulingBanner';
 import AppointmentDetailsModal from './AppointmentDetailsModal';
 import CountdownTimer from './CountdownTimer';
 import TradeInDetails from './TradeInDetails';
+import ProgressScore from './ProgressScore';
 
 interface OrderCardProps {
   combinedOrder: CombinedOrder;
@@ -336,6 +337,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ combinedOrder, diff, hasNewChange
         {activeView === 'details' && (
           <div className="flex-grow flex flex-col animate-fade-in-up" role="tabpanel">
             <div className="p-5 flex-grow">
+              <ProgressScore tasksData={details.tasks} />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
                   {(() => {
                       const hasChanged = !!vin.diffValue;
@@ -416,7 +418,11 @@ const OrderCard: React.FC<OrderCardProps> = ({ combinedOrder, diff, hasNewChange
 
         {activeView === 'checklist' && (
           <div role="tabpanel" className="animate-fade-in-up">
-              <DeliveryChecklist orderReferenceNumber={order.referenceNumber} />
+              <DeliveryChecklist
+                orderReferenceNumber={order.referenceNumber}
+                appointmentDate={appointment.value}
+                deliveryLocation={deliveryCenter.value}
+              />
           </div>
         )}
 

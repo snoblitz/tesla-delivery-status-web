@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { HistoricalSnapshot } from '../types';
 import { compareObjects } from '../utils/helpers';
 import { DIFF_KEY_LABELS } from '../constants';
-import { XIcon, FileTextIcon, ArrowRightIcon } from './icons';
+import { XIcon, FileTextIcon, ArrowRightIcon, BarChartIcon, HistoryIcon } from './icons';
+import HistoricalAnalytics from './HistoricalAnalytics';
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -47,6 +48,7 @@ const ChangeItem: React.FC<{ label: string; from: any; to: any }> = ({ label, fr
 
 const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, orderReferenceNumber }) => {
   const [history, setHistory] = useState<HistoricalSnapshot[]>([]);
+  const [activeView, setActiveView] = useState<'changelog' | 'analytics'>('changelog');
 
   useEffect(() => {
     if (isOpen) {
@@ -138,6 +140,26 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, orderRefer
     });
   };
 
+  const TabButton: React.FC<{ view: 'changelog' | 'analytics'; label: string; icon: React.ReactNode }> = ({
+    view,
+    label,
+    icon,
+  }) => (
+    <button
+      onClick={() => setActiveView(view)}
+      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-all duration-150 active:scale-95 ${
+        activeView === view
+          ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+          : 'text-gray-500 dark:text-tesla-gray-400 border-b-2 border-transparent hover:bg-gray-100 dark:hover:bg-tesla-gray-700/50'
+      }`}
+      aria-pressed={activeView === view}
+      role="tab"
+    >
+      {icon}
+      {label}
+    </button>
+  );
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -147,11 +169,13 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, orderRefer
       aria-labelledby="history-modal-title"
     >
       <div
-        className="relative flex flex-col w-full max-w-2xl max-h-[90vh] bg-white dark:bg-tesla-gray-800 rounded-2xl shadow-2xl overflow-hidden"
+        className="relative flex flex-col w-full max-w-4xl max-h-[90vh] bg-white dark:bg-tesla-gray-800 rounded-2xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         <header className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-tesla-gray-700 flex-shrink-0">
-          <h2 id="history-modal-title" className="text-xl font-bold text-gray-900 dark:text-white">Order History</h2>
+          <h2 id="history-modal-title" className="text-xl font-bold text-gray-900 dark:text-white">
+            Order History & Analytics
+          </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-tesla-gray-700 transition-all duration-150 active:scale-90 active:bg-gray-300 dark:active:bg-tesla-gray-600"
@@ -160,8 +184,26 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, orderRefer
             <XIcon className="w-6 h-6 text-gray-600 dark:text-tesla-gray-300" />
           </button>
         </header>
-        <main className="overflow-y-auto px-6 pt-6">
-          {renderHistoryLog()}
+
+        <div className="flex border-b border-gray-200 dark:border-tesla-gray-700" role="tablist">
+          <TabButton
+            view="changelog"
+            label="Changelog"
+            icon={<HistoryIcon className="w-4 h-4" />}
+          />
+          <TabButton
+            view="analytics"
+            label="Analytics"
+            icon={<BarChartIcon className="w-4 h-4" />}
+          />
+        </div>
+
+        <main className="overflow-y-auto flex-grow">
+          {activeView === 'changelog' ? (
+            <div className="px-6 pt-6">{renderHistoryLog()}</div>
+          ) : (
+            <HistoricalAnalytics history={history} />
+          )}
         </main>
       </div>
     </div>

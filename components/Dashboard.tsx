@@ -5,11 +5,13 @@ import { compareObjects } from '../utils/helpers';
 import OrderCard from './OrderCard';
 import Spinner from './Spinner';
 import Toast from './Toast';
-import { TeslaLogo, LogoutIcon, RefreshIcon, SunIcon, MoonIcon, GithubIcon, ResetIcon } from './icons';
+import { TeslaLogo, LogoutIcon, RefreshIcon, SunIcon, MoonIcon, GithubIcon, ResetIcon, BellIcon } from './icons';
 import { GITHUB_REPO_URL } from '../constants';
 import BuyMeACoffeeButton from './BuyMeACoffeeButton';
 import AdminPanel from './AdminPanel';
 import Tooltip from './Tooltip';
+import NotificationSettings from './NotificationSettings';
+import { sendOrderChangeNotification, getNotificationPreference, isNotificationEnabled } from '../utils/notifications';
 
 interface DashboardProps {
   tokens: TeslaTokens;
@@ -28,6 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tokens, onLogout, handleRefreshAn
   const [logoClicks, setLogoClicks] = useState(0);
   const [rainbowMode, setRainbowMode] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
   const [mockOrder, setMockOrder] = useState<CombinedOrder | null>(null);
   const clickTimeoutRef = useRef<number | null>(null);
 
@@ -98,6 +101,9 @@ const Dashboard: React.FC<DashboardProps> = ({ tokens, onLogout, handleRefreshAn
             history.push({ timestamp: Date.now(), data: newCombinedOrder });
             localStorage.setItem(historyKey, JSON.stringify(history));
             latestDiffs[rn] = diff;
+
+            // Send notification for this order's changes
+            sendOrderChangeNotification(rn, diff);
           }
         } else {
           const initialHistory = [{ timestamp: Date.now(), data: newCombinedOrder }];
@@ -107,7 +113,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tokens, onLogout, handleRefreshAn
 
       setOrders(newOrders);
       setDiffs(latestDiffs);
-      
+
       if (Object.keys(latestDiffs).length > 0) {
         setToast({ message: 'New changes detected!', type: 'success' });
       } else if (isManualRefresh) {
@@ -261,7 +267,17 @@ const Dashboard: React.FC<DashboardProps> = ({ tokens, onLogout, handleRefreshAn
           >
             {theme === 'dark' ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
-          
+
+          <Tooltip text="Notification settings">
+            <button
+              onClick={() => setIsNotificationSettingsOpen(true)}
+              className={`${iconButtonClasses} ${isNotificationEnabled() && getNotificationPreference() ? 'text-blue-600 dark:text-blue-400' : ''}`}
+              aria-label="Notification Settings"
+            >
+              <BellIcon className="w-6 h-6" />
+            </button>
+          </Tooltip>
+
           {mockOrder ? (
             <Tooltip text="Reset to live data from Tesla API">
               <button
@@ -297,10 +313,15 @@ const Dashboard: React.FC<DashboardProps> = ({ tokens, onLogout, handleRefreshAn
         {renderContent()}
       </main>
 
-      <AdminPanel 
+      <AdminPanel
         isOpen={isAdminPanelOpen}
         onClose={() => setIsAdminPanelOpen(false)}
         onApply={handleApplyMockJson}
+      />
+
+      <NotificationSettings
+        isOpen={isNotificationSettingsOpen}
+        onClose={() => setIsNotificationSettingsOpen(false)}
       />
     </div>
   );
